@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 import argparse
+import collections
+import json
+import struct
+
 import flask
 import serial
-import socket
-import struct
-import selectors
-import json
-import os
-import contextlib
-import collections
-
 
 GasConcentrationResponse = collections.namedtuple(
     "GasConcentrationResponse",

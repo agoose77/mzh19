@@ -1,0 +1,9 @@
+version: "3.9"
+services:
+  device:
+    build: .
+    ports:
+      - "9000:8080"
+    devices:
+      - "/dev/serial0"
+    network_mode: host

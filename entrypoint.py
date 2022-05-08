@@ -11,7 +11,10 @@ import contextlib
 import collections
 
 
-GasConcentrationResponse = collections.namedtuple("GasConcentrationResponse", "start command concentration temperature status uh_ul checksum")
+GasConcentrationResponse = collections.namedtuple(
+    "GasConcentrationResponse",
+    "start command concentration temperature status uh_ul checksum",
+)
 
 app = flask.Flask(__name__)
 
@@ -20,7 +23,7 @@ serial_device = None
 
 def compute_checksum(payload):
     parts = struct.unpack(">9B", payload)
-    return ((~sum(parts[1:-1])) & 0xff) + 1
+    return ((~sum(parts[1:-1])) & 0xFF) + 1
 
 
 def read_concentation(device):
@@ -36,40 +39,25 @@ def read_concentation(device):
     checksum = compute_checksum(raw_response)
 
     # Parse response
-    response = GasConcentrationResponse._make(
-        struct.unpack(">BBHBBHB", raw_response)
-    )
-
+    response = GasConcentrationResponse._make(struct.unpack(">BBHBBHB", raw_response))
 
     # Validate payload
     if checksum != response.checksum:
-        state = {
-            "status": "error",
-            "message": "invalid checksum"
-        }
+        state = {"status": "error", "message": "invalid checksum"}
     elif response.start != 0xFF:
-        state = {
-            "status": "error",
-            "message": "invalid start byte"
-        }
+        state = {"status": "error", "message": "invalid start byte"}
     else:
         # Build response
-        state = {
-            "status": "success",
-            "data": response._asdict()
-        }
+        state = {"status": "success", "data": response._asdict()}
 
     return state
-    
 
 
 @app.route("/concentration")
 def concentration():
     data = read_concentation(serial_device)
     response = app.response_class(
-        response=json.dumps(data),
-        status=200,
-        mimetype='application/json'
+        response=json.dumps(data), status=200, mimetype="application/json"
     )
     return response
 
@@ -83,14 +71,12 @@ if __name__ == "__main__":
     parser.add_argument("--port", default=8080)
     args = parser.parse_args()
 
-    serial_device = serial.Serial(
-            args.serial_device,
-            args.baud_rate,
-            timeout=args.timeout,
-            stopbits=serial.STOPBITS_ONE,
-            parity=serial.PARITY_NONE,
-            bytesize=serial.EIGHTBITS,
-        )
-    
-    with contextlib.closing(serial_device):
+    with serial.Serial(
+        args.serial_device,
+        args.baud_rate,
+        timeout=args.timeout,
+        stopbits=serial.STOPBITS_ONE,
+        parity=serial.PARITY_NONE,
+        bytesize=serial.EIGHTBITS,
+    ) as serial_device:
         app.run(host=args.ip, port=args.port)
